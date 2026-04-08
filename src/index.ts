@@ -8,20 +8,17 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { AxiosError } from "axios";
 import {
-  agentproxyFetch,
-  validateFetchParams,
-  agentproxySearch,
-  validateSearchParams,
-  agentproxySession,
-  validateSessionParams,
+  agentproxyFetch, validateFetchParams,
+  agentproxySearch, validateSearchParams,
+  agentproxySession, validateSessionParams,
+  agentproxyRender, validateRenderParams,
   agentproxyStatus,
 } from "./tools/index.js";
 import { VERSION } from "./config.js";
 
-// ─── Keys ────────────────────────────────────────────────────────────────────
+// ─── Single API key — get yours at novada.com ─────────────────────────────────
 
 const NOVADA_API_KEY = process.env.NOVADA_API_KEY;
-const PROXY_API_KEY = process.env.PROXY_API_KEY; // IPLoop key for proxy fetch
 
 // ─── Tool Definitions ────────────────────────────────────────────────────────
 
@@ -29,17 +26,32 @@ const TOOLS = [
   {
     name: "agentproxy_fetch",
     description:
-      "Fetch any URL through a residential proxy network (2M+ IPs, 195 countries, anti-bot bypass). Use this when you need raw page content from anti-bot sites (Amazon, LinkedIn, Cloudflare-protected pages). Supports geo-targeting and sticky sessions. Requires PROXY_API_KEY.",
+      "Fetch any URL through Novada's residential proxy network (2M+ IPs, 195 countries, anti-bot bypass). Works on Amazon, LinkedIn, Cloudflare-protected pages, and most commercial sites. Use agentproxy_render instead for JavaScript-heavy pages that need a real browser.",
     inputSchema: {
       type: "object" as const,
       properties: {
         url: { type: "string", description: "The URL to fetch" },
-        country: { type: "string", description: "2-letter country code for geo-targeting (e.g. US, DE, GB, JP)" },
-        city: { type: "string", description: "City name for city-level targeting (e.g. newyork, london)" },
-        session_id: { type: "string", description: "Reuse this ID across calls to stay on the same IP (sticky session)" },
-        asn: { type: "string", description: "ISP/ASN number for targeting a specific network" },
-        format: { type: "string", enum: ["raw", "markdown"], default: "markdown", description: "Output format — markdown strips HTML tags for readability" },
-        timeout: { type: "number", default: 30, description: "Request timeout in seconds (1-120)" },
+        country: { type: "string", description: "2-letter country code: US, DE, JP, GB, BR, ... (195+ options)" },
+        city: { type: "string", description: "City-level targeting: newyork, london, tokyo, ..." },
+        session_id: { type: "string", description: "Use the same ID across calls to stay on the same IP" },
+        asn: { type: "string", description: "Target a specific ISP/ASN number" },
+        format: { type: "string", enum: ["markdown", "raw"], default: "markdown", description: "markdown strips HTML tags; raw returns full HTML" },
+        timeout: { type: "number", default: 60, description: "Timeout in seconds (1-120)" },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "agentproxy_render",
+    description:
+      "Render a JavaScript-heavy page using Novada's Browser API (real Chromium, full JS execution). Use this for SPAs, React/Vue apps, and sites that require JavaScript to load content — like Zillow, BestBuy, or any page that shows blank without a browser. For static/HTML pages, agentproxy_fetch is faster.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        url: { type: "string", description: "The URL to render" },
+        format: { type: "string", enum: ["markdown", "html", "text"], default: "markdown" },
+        wait_for: { type: "string", description: "CSS selector to wait for before extracting (e.g. '.product-title')" },
+        timeout: { type: "number", default: 60, description: "Timeout in seconds (5-120)" },
       },
       required: ["url"],
     },
@@ -47,7 +59,7 @@ const TOOLS = [
   {
     name: "agentproxy_search",
     description:
-      "Structured web search (Google, Bing, DuckDuckGo) via Novada's proxy infrastructure. Returns titles, URLs, and descriptions. Best for: finding pages, factual queries, current events. For reading a specific URL, use agentproxy_fetch instead. Requires NOVADA_API_KEY.",
+      "Structured web search via Novada (Google, Bing, DuckDuckGo). Returns titles, URLs, and descriptions — no HTML parsing needed. Best for finding pages and factual queries. For reading a specific URL, use agentproxy_fetch instead.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -56,10 +68,10 @@ const TOOLS = [
           type: "string",
           enum: ["google", "bing", "duckduckgo", "yahoo", "yandex"],
           default: "google",
-          description: "Search engine — google recommended for best relevance",
+          description: "Search engine — google recommended",
         },
         num: { type: "number", default: 10, minimum: 1, maximum: 20, description: "Number of results (1-20)" },
-        country: { type: "string", description: "Country code for localized results (e.g. us, uk, de)" },
+        country: { type: "string", description: "Country for localized results (e.g. us, uk, de)" },
         language: { type: "string", description: "Language code (e.g. en, zh, de)" },
       },
       required: ["query"],
@@ -68,15 +80,15 @@ const TOOLS = [
   {
     name: "agentproxy_session",
     description:
-      "Fetch a URL with a sticky session — guarantees the same residential IP is used every time you pass the same session_id. Use this for multi-step workflows where IP consistency matters (login flows, paginated scraping, price monitoring). Requires PROXY_API_KEY.",
+      "Fetch a URL with a sticky session — the same residential IP is used for every call with the same session_id. Use this for multi-step workflows where IP consistency matters: login flows, paginated scraping, price monitoring across pages.",
     inputSchema: {
       type: "object" as const,
       properties: {
-        session_id: { type: "string", description: "Unique session identifier — reuse the same ID to keep the same IP" },
+        session_id: { type: "string", description: "Unique session ID — reuse the same value to keep the same IP" },
         url: { type: "string", description: "The URL to fetch" },
-        country: { type: "string", description: "2-letter country code (e.g. US, DE)" },
-        format: { type: "string", enum: ["raw", "markdown"], default: "markdown" },
-        timeout: { type: "number", default: 30, description: "Timeout in seconds (1-120)" },
+        country: { type: "string", description: "2-letter country code" },
+        format: { type: "string", enum: ["markdown", "raw"], default: "markdown" },
+        timeout: { type: "number", default: 60, description: "Timeout in seconds" },
       },
       required: ["session_id", "url"],
     },
@@ -84,7 +96,7 @@ const TOOLS = [
   {
     name: "agentproxy_status",
     description:
-      "Check the proxy network health — returns number of online nodes, device breakdown, and service status. Use this to verify the proxy network is available before starting a scraping workflow.",
+      "Check Novada's proxy network health — live node count, device types, service status. Use before starting a large scraping workflow to confirm the network is healthy.",
     inputSchema: {
       type: "object" as const,
       properties: {},
@@ -114,35 +126,35 @@ class AgentProxyServer {
       const { name, arguments: args } = request.params;
       const raw = (args || {}) as Record<string, unknown>;
 
+      if (!NOVADA_API_KEY) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: "Error: NOVADA_API_KEY is not set.\n\nGet your free API key at https://www.novada.com — sign up takes 30 seconds.\n\nThen:\n  claude mcp add agentproxy -e NOVADA_API_KEY=your_key -- npx -y agentproxy",
+          }],
+          isError: true,
+        };
+      }
+
       try {
         let result: string;
 
         switch (name) {
-          case "agentproxy_fetch": {
-            if (!PROXY_API_KEY) {
-              return this.keyError("PROXY_API_KEY", "agentproxy_fetch");
-            }
-            result = await agentproxyFetch(validateFetchParams(raw), PROXY_API_KEY);
+          case "agentproxy_fetch":
+            result = await agentproxyFetch(validateFetchParams(raw), NOVADA_API_KEY);
             break;
-          }
-          case "agentproxy_search": {
-            if (!NOVADA_API_KEY) {
-              return this.keyError("NOVADA_API_KEY", "agentproxy_search");
-            }
+          case "agentproxy_render":
+            result = await agentproxyRender(validateRenderParams(raw), NOVADA_API_KEY);
+            break;
+          case "agentproxy_search":
             result = await agentproxySearch(validateSearchParams(raw), NOVADA_API_KEY);
             break;
-          }
-          case "agentproxy_session": {
-            if (!PROXY_API_KEY) {
-              return this.keyError("PROXY_API_KEY", "agentproxy_session");
-            }
-            result = await agentproxySession(validateSessionParams(raw), PROXY_API_KEY);
+          case "agentproxy_session":
+            result = await agentproxySession(validateSessionParams(raw), NOVADA_API_KEY);
             break;
-          }
-          case "agentproxy_status": {
+          case "agentproxy_status":
             result = await agentproxyStatus();
             break;
-          }
           default:
             return {
               content: [{
@@ -169,16 +181,6 @@ class AgentProxyServer {
     });
   }
 
-  private keyError(envVar: string, tool: string) {
-    return {
-      content: [{
-        type: "text" as const,
-        text: `Error: ${envVar} is not set. ${tool} requires it.\nGet your key and add it:\n  claude mcp add agentproxy -e ${envVar}=your_key -- npx -y agentproxy`,
-      }],
-      isError: true,
-    };
-  }
-
   async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
@@ -198,27 +200,26 @@ if (cliArgs.includes("--list-tools")) {
 }
 
 if (cliArgs.includes("--help") || cliArgs.includes("-h")) {
-  console.log(`agentproxy v${VERSION} — Agent-to-agent proxy MCP server
+  console.log(`agentproxy v${VERSION} — Agent-to-agent proxy MCP server by Novada
 
 Usage:
-  npx agentproxy              Start the MCP server (stdio transport)
+  npx agentproxy              Start the MCP server
   npx agentproxy --list-tools Show available tools
   npx agentproxy --help       Show this help
 
-Environment:
-  PROXY_API_KEY   Residential proxy API key (for fetch/session tools)
-  NOVADA_API_KEY  Novada Scraper API key (for search tool)
+Get your API key:
+  1. Sign up at https://www.novada.com (free, 30 seconds)
+  2. Go to Dashboard → API Keys
+  3. Copy your key
 
 Connect to Claude Code:
-  claude mcp add agentproxy \\
-    -e PROXY_API_KEY=your_proxy_key \\
-    -e NOVADA_API_KEY=your_novada_key \\
-    -- npx -y agentproxy
+  claude mcp add agentproxy -e NOVADA_API_KEY=your_key -- npx -y agentproxy
 
 Tools:
-  agentproxy_fetch    Fetch any URL through residential proxy (geo, anti-bot)
-  agentproxy_search   Structured web search via Novada
-  agentproxy_session  Sticky session fetch (same IP across requests)
+  agentproxy_fetch    Fetch any URL through residential proxy (anti-bot bypass)
+  agentproxy_render   Render JS-heavy pages with real browser (Novada Browser API)
+  agentproxy_search   Structured web search via Google/Bing
+  agentproxy_session  Sticky session — same IP across requests
   agentproxy_status   Proxy network health check
 `);
   process.exit(0);

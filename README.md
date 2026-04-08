@@ -1,130 +1,133 @@
 # AgentProxy
 
-Residential proxy MCP server for AI agents — fetch any URL through 2M+ residential IPs, bypass anti-bot systems, geo-target by country or city, maintain sticky sessions across requests.
+Agent-to-agent proxy MCP server — fetch any URL through 2M+ residential IPs, bypass anti-bot systems, render JS-heavy pages, geo-target by country or city, maintain sticky sessions.
 
 [![npm](https://img.shields.io/npm/v/agentproxy?label=npm&color=CB3837)](https://npmjs.com/package/agentproxy)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-Built for **agent-to-agent** workflows: your AI agent calls AgentProxy tools to access the web — no human in the loop.
+Powered by **[Novada](https://www.novada.com)** — one account, one API key, all tools.
 
-## Why AgentProxy
+## Get Your Free API Key
 
-Without a proxy, AI agents get blocked by 60-70% of commercial websites. AgentProxy routes requests through real Android, Windows, and Mac devices — the same IPs your target sites see from real home users.
+1. Sign up at **[novada.com](https://www.novada.com)** — 30 seconds, no credit card
+2. Go to **Dashboard → API Keys** → copy your key
+3. Add to Claude Code (see below)
 
-| Problem | AgentProxy |
-|---------|-----------|
-| Amazon, LinkedIn block your agent | Residential IPs — looks like a real user |
-| Cloudflare / Akamai challenges | Bypass via real device fingerprints |
-| Geo-restricted content | 195+ countries, city-level targeting |
-| Multi-step workflows need same IP | Sticky sessions — same IP across requests |
-| Need structured search results | Built-in Google/Bing web search via Novada |
+Contact **novada.com** for enterprise access and custom plans.
 
 ## Install
 
 ```bash
-# Add to Claude Code (60 seconds)
 claude mcp add agentproxy \
-  -e PROXY_API_KEY=your_proxy_key \
-  -e NOVADA_API_KEY=your_novada_key \
+  -e NOVADA_API_KEY=your_key \
   -- npx -y agentproxy
 ```
 
-Get your API keys at **[novada.com](https://www.novada.com)** or contact Novada for enterprise access.
+That's it. One key. Five tools. Ready.
+
+## Why AgentProxy
+
+AI agents get blocked on 60–70% of commercial websites with standard HTTP requests. AgentProxy routes through real home devices — Android phones, Windows PCs, Macs — so your agent looks like a real user.
+
+| Problem | AgentProxy |
+|---------|-----------|
+| Amazon, LinkedIn block your agent | Residential IPs from real devices |
+| Cloudflare / Akamai challenges | Bypassed via real device fingerprints |
+| JS-rendered pages show blank | Browser API runs real Chromium |
+| Geo-restricted content | 195+ countries, city-level targeting |
+| Multi-step workflows need same IP | Sticky sessions — same IP across calls |
+| Need structured search results | Built-in Google/Bing via Novada |
 
 ## Tools
 
 ### `agentproxy_fetch`
-Fetch any URL through a residential proxy.
+Fetch any URL through Novada's residential proxy. Works on Amazon, LinkedIn, Cloudflare-protected pages, and most commercial sites.
 
 ```
 url        — Target URL (required)
-country    — 2-letter ISO code: US, DE, JP, GB, BR, ... (195+ countries)
+country    — 2-letter code: US, DE, JP, GB, BR, ... (195+ countries)
 city       — City-level: newyork, london, tokyo, ...
-session_id — Reuse same ID to keep the same IP (sticky session)
-asn        — Target specific ISP/ASN
-format     — "markdown" (default, strips HTML) or "raw"
+session_id — Reuse same ID to keep the same IP across calls
+asn        — Target a specific ISP/ASN
+format     — "markdown" (default) | "raw"
 timeout    — Seconds, 1-120 (default 60)
 ```
 
+### `agentproxy_render`
+Render JavaScript-heavy pages using Novada's Browser API (real Chromium). Use this for SPAs, React/Vue apps, and sites that need JS to load content.
+
+```
+url       — Target URL (required)
+format    — "markdown" (default) | "html" | "text"
+wait_for  — CSS selector to wait for before extracting (e.g. ".product-title")
+timeout   — Seconds, 5-120 (default 60)
+```
+
 ### `agentproxy_search`
-Structured web search via Novada.
+Structured web search via Novada. Returns clean titles, URLs, descriptions — no HTML parsing needed.
 
 ```
 query    — Search query (required)
-engine   — google (default) | bing | duckduckgo | yahoo | yandex
+engine   — google (default) | bing | yahoo | yandex
 num      — Results count, 1-20 (default 10)
 country  — Localize results (e.g. us, uk, de)
 language — Language code (e.g. en, zh, de)
 ```
 
 ### `agentproxy_session`
-Fetch a URL with a guaranteed sticky IP — every call with the same `session_id` hits the same residential IP.
+Sticky session fetch — every call with the same `session_id` uses the same residential IP. For login flows, paginated scraping, price monitoring.
 
 ```
-session_id — Unique ID for this session (required)
+session_id — Unique session ID (required)
 url        — Target URL (required)
-country    — Country for initial IP selection
-format     — "markdown" or "raw"
+country    — 2-letter country code
+format     — "markdown" | "raw"
 timeout    — Seconds, 1-120
 ```
 
 ### `agentproxy_status`
-Check the proxy network health — node count, device types, service status.
+Check Novada's proxy network health — node count, device breakdown, service status.
 
-## Quick Start
+## Example: Agent Price Monitor
 
-```bash
-# Install and run MCP server
-npx agentproxy --help
+```
+# Check Amazon price from US residential IP
+agentproxy_fetch(url="https://amazon.com/dp/B0BSHF7WHW", country="US")
 
-# List tools
-npx agentproxy --list-tools
+# Same product, three markets
+agentproxy_fetch(url=..., country="US")
+agentproxy_fetch(url=..., country="DE")
+agentproxy_fetch(url=..., country="JP")
+
+# Render a JS-heavy real estate page
+agentproxy_render(url="https://zillow.com/homes/NYC_rb/", wait_for=".list-card")
+
+# Multi-page scrape with same IP
+agentproxy_session(session_id="job-001", url="https://example.com/page/1")
+agentproxy_session(session_id="job-001", url="https://example.com/page/2")  # same IP
+
+# Web search
+agentproxy_search(query="AI proxy tools 2024", engine="google", num=5)
 ```
 
-## Example Agent Usage
-
-Your agent needs current data from Amazon:
-```
-Tool: agentproxy_fetch
-url: https://www.amazon.com/dp/B0BSHF7WHW
-country: US
-format: markdown
-```
-
-Your agent monitors prices across 3 countries:
-```
-agentproxy_fetch(url, country="US")
-agentproxy_fetch(url, country="DE")
-agentproxy_fetch(url, country="JP")
-```
-
-Your agent needs consistent IP for a login flow:
-```
-agentproxy_session(session_id="checkout-flow-001", url=..., country="US")
-agentproxy_session(session_id="checkout-flow-001", url=..., country="US")  // same IP
-```
-
-## Network Stats
+## Network
 
 | Metric | Value |
 |--------|-------|
-| Residential IP pool | 2,000,000+ |
+| Residential IPs | 2,000,000+ |
 | Live nodes | 7,500+ |
 | Countries | 195+ |
 | Device types | Android, Windows, Mac |
 | Avg response | < 2s |
 
+## Confirmed Working
+
+✅ Amazon, LinkedIn, Cloudflare, HackerNews, GitHub, Wikipedia, BBC, CNN, Reddit, IMDB, Steam, Goodreads, and 50+ more.
+
 ## Known Limitations
 
-Some sites require JavaScript rendering beyond what residential proxies alone provide:
-- Zillow, BestBuy, Nike — need browser-level JS execution
-- DuckDuckGo search — intermittently blocks proxy IPs (use Google or Bing instead)
-
-Novada's Browser API (coming soon) will handle JavaScript-rendered pages.
-
-## Tested Sites
-
-✅ Confirmed working: Amazon, LinkedIn, Cloudflare (nowsecure.nl), HackerNews, GitHub, Wikipedia, BBC, CNN, Reddit, IMDB, Steam, and 50+ more.
+- Sites requiring full JS execution (Zillow, BestBuy, Nike) → use `agentproxy_render`
+- DuckDuckGo search → intermittently blocks proxy IPs; use Google or Bing
 
 ## License
 

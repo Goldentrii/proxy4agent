@@ -8,3 +8,6 @@ export { agentproxySession, validateSessionParams } from "./session.js";
 export type { SessionParams } from "./session.js";
 
 export { agentproxyStatus } from "./status.js";
+
+export { agentproxyRender, validateRenderParams } from "./render.js";
+export type { RenderParams } from "./render.js";
