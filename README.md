@@ -12,11 +12,13 @@ Powered by **[Novada](https://www.novada.com)** — sign up once, all tools from
 1. Sign up at **[novada.com](https://www.novada.com)** — 30 seconds, no credit card
 2. From your dashboard, get the credentials for each tool you need:
 
-| Tool | Env Var(s) | Where to get it |
-|------|-----------|-----------------|
+| Tool | Required env vars | Where to get them |
+|------|-------------------|-------------------|
+| `agentproxy_fetch` | `NOVADA_PROXY_USER` + `NOVADA_PROXY_PASS` | Dashboard → Residential Proxies → Endpoint Generator |
+| `agentproxy_session` | `NOVADA_PROXY_USER` + `NOVADA_PROXY_PASS` | Dashboard → Residential Proxies → Endpoint Generator |
 | `agentproxy_search` | `NOVADA_API_KEY` | Dashboard → API Keys |
-| `agentproxy_fetch` / `agentproxy_session` | `NOVADA_PROXY_USER` + `NOVADA_PROXY_PASS` | Dashboard → Residential Proxies → Endpoint Generator |
-| `agentproxy_render` [BETA] | `NOVADA_BROWSER_WS` | Dashboard → Browser API → Playground (copy the Puppeteer URL) |
+| `agentproxy_render` [BETA] | `NOVADA_BROWSER_WS` | Dashboard → Browser API → Playground → copy Puppeteer URL |
+| `agentproxy_status` | _(none)_ | — |
 
 You don't need all of them — only set what you use.
 
