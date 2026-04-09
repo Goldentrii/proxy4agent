@@ -1,8 +1,8 @@
-# AgentProxy
+# ProxyVeil
 
-Agent-to-agent proxy MCP server — fetch any URL through 2M+ residential IPs, bypass anti-bot systems, render JS-heavy pages, geo-target by country or city, maintain sticky sessions.
+Residential proxy MCP server for AI agents — fetch any URL through 2M+ residential IPs, bypass anti-bot systems, render JS-heavy pages, geo-target by country or city, maintain sticky sessions.
 
-[![npm](https://img.shields.io/npm/v/agentproxy?label=npm&color=CB3837)](https://npmjs.com/package/agentproxy)
+[![npm](https://img.shields.io/npm/v/proxy-veil?label=npm&color=CB3837)](https://npmjs.com/package/proxy-veil)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Powered by **[Novada](https://www.novada.com)** — sign up once, all tools from one account.
@@ -26,28 +26,28 @@ You don't need all of them — only set what you use.
 
 **Search only:**
 ```bash
-claude mcp add agentproxy \
+claude mcp add proxy-veil \
   -e NOVADA_API_KEY=your_key \
-  -- npx -y agentproxy
+  -- npx -y proxy-veil
 ```
 
 **Fetch + Session (full proxy network):**
 ```bash
-claude mcp add agentproxy \
+claude mcp add proxy-veil \
   -e NOVADA_PROXY_USER=your_username \
   -e NOVADA_PROXY_PASS=your_password \
   -e NOVADA_PROXY_HOST=your_account_host \
-  -- npx -y agentproxy
+  -- npx -y proxy-veil
 ```
 
 **All tools:**
 ```bash
-claude mcp add agentproxy \
+claude mcp add proxy-veil \
   -e NOVADA_API_KEY=your_key \
   -e NOVADA_PROXY_USER=your_username \
   -e NOVADA_PROXY_PASS=your_password \
   -e NOVADA_PROXY_HOST=your_account_host \
-  -- npx -y agentproxy
+  -- npx -y proxy-veil
 ```
 
 > `NOVADA_PROXY_HOST` is your account-specific proxy host from the Endpoint Generator (e.g. `abc123.vtv.na.novada.pro`). Required for reliable sticky sessions.

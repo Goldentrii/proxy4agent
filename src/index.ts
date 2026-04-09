@@ -119,7 +119,7 @@ class AgentProxyServer {
 
   constructor() {
     this.server = new Server(
-      { name: "agentproxy", version: VERSION },
+      { name: "proxy-veil", version: VERSION },
       { capabilities: { tools: {} } }
     );
     this.setupHandlers();
@@ -204,7 +204,7 @@ class AgentProxyServer {
     return {
       content: [{
         type: "text" as const,
-        text: `Error: NOVADA_API_KEY is not set (required for ${forWhat}).\n\nGet your API key at https://www.novada.com — sign up is free.\n\nThen restart with:\n  claude mcp add agentproxy -e NOVADA_API_KEY=your_key -- npx -y agentproxy`,
+        text: `Error: NOVADA_API_KEY is not set (required for ${forWhat}).\n\nGet your API key at https://www.novada.com — sign up is free.\n\nThen restart with:\n  claude mcp add proxy-veil -e NOVADA_API_KEY=your_key -- npx -y proxy-veil`,
       }],
       isError: true,
     };
@@ -214,7 +214,7 @@ class AgentProxyServer {
     return {
       content: [{
         type: "text" as const,
-        text: `Error: NOVADA_PROXY_USER and NOVADA_PROXY_PASS are not set (required for fetch/session tools).\n\nGet your proxy credentials at https://www.novada.com:\n  Dashboard → Residential Proxies → Endpoint Generator\n\nThen restart with:\n  claude mcp add agentproxy \\\n    -e NOVADA_PROXY_USER=your_username \\\n    -e NOVADA_PROXY_PASS=your_password \\\n    -- npx -y agentproxy`,
+        text: `Error: NOVADA_PROXY_USER and NOVADA_PROXY_PASS are not set (required for fetch/session tools).\n\nGet your proxy credentials at https://www.novada.com:\n  Dashboard → Residential Proxies → Endpoint Generator\n\nThen restart with:\n  claude mcp add proxy-veil \\\n    -e NOVADA_PROXY_USER=your_username \\\n    -e NOVADA_PROXY_PASS=your_password \\\n    -- npx -y proxy-veil`,
       }],
       isError: true,
     };
@@ -224,7 +224,7 @@ class AgentProxyServer {
     return {
       content: [{
         type: "text" as const,
-        text: `Error: NOVADA_BROWSER_WS is not set (required for the render tool).\n\nGet your Browser API WebSocket URL at https://www.novada.com:\n  Dashboard → Browser API → Playground → copy the Puppeteer/Playwright URL\n\nIt looks like: wss://USER-zone-browser:PASS@upg-scbr.novada.com\n\nThen restart with:\n  claude mcp add agentproxy -e NOVADA_BROWSER_WS=your_wss_url -- npx -y agentproxy`,
+        text: `Error: NOVADA_BROWSER_WS is not set (required for the render tool).\n\nGet your Browser API WebSocket URL at https://www.novada.com:\n  Dashboard → Browser API → Playground → copy the Puppeteer/Playwright URL\n\nIt looks like: wss://USER-zone-browser:PASS@upg-scbr.novada.com\n\nThen restart with:\n  claude mcp add proxy-veil -e NOVADA_BROWSER_WS=your_wss_url -- npx -y proxy-veil`,
       }],
       isError: true,
     };
@@ -233,7 +233,7 @@ class AgentProxyServer {
   async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error(`AgentProxy MCP v${VERSION} running on stdio`);
+    console.error(`ProxyVeil MCP v${VERSION} running on stdio`);
   }
 }
 
@@ -249,37 +249,37 @@ if (cliArgs.includes("--list-tools")) {
 }
 
 if (cliArgs.includes("--help") || cliArgs.includes("-h")) {
-  console.log(`agentproxy v${VERSION} — Agent-to-agent proxy MCP server by Novada
+  console.log(`proxy-veil v${VERSION} — Residential proxy MCP server for AI agents by Novada
 
 Usage:
-  npx agentproxy              Start the MCP server
-  npx agentproxy --list-tools Show available tools
-  npx agentproxy --help       Show this help
+  npx proxy-veil              Start the MCP server
+  npx proxy-veil --list-tools Show available tools
+  npx proxy-veil --help       Show this help
 
 Environment Variables:
-  NOVADA_API_KEY        Novada Scraper API key (for agentproxy_search)
   NOVADA_PROXY_USER     Residential proxy username (for agentproxy_fetch, agentproxy_session)
   NOVADA_PROXY_PASS     Residential proxy password
+  NOVADA_PROXY_HOST     Account-specific proxy host (optional; for reliable sticky sessions)
+  NOVADA_API_KEY        Novada Scraper API key (for agentproxy_search)
   NOVADA_BROWSER_WS     Browser API WebSocket URL (for agentproxy_render)
 
 Get your credentials:
   1. Sign up at https://www.novada.com (free, 30 seconds)
-  2. Scraper API key: Dashboard → API Keys
-  3. Proxy credentials: Dashboard → Residential Proxies → Endpoint Generator
+  2. Proxy credentials: Dashboard → Residential Proxies → Endpoint Generator
+  3. Scraper API key: Dashboard → API Keys
   4. Browser API: Dashboard → Browser API → Playground
 
 Connect to Claude Code:
-  claude mcp add agentproxy \\
-    -e NOVADA_API_KEY=your_key \\
+  claude mcp add proxy-veil \\
     -e NOVADA_PROXY_USER=your_username \\
     -e NOVADA_PROXY_PASS=your_password \\
-    -- npx -y agentproxy
+    -- npx -y proxy-veil
 
 Tools:
   agentproxy_fetch    Fetch any URL through residential proxy (anti-bot bypass)
-  agentproxy_render   Render JS-heavy pages with real browser (Novada Browser API)
-  agentproxy_search   Structured web search via Google/Bing
   agentproxy_session  Sticky session — same IP across requests
+  agentproxy_search   Structured web search via Google
+  agentproxy_render   Render JS-heavy pages with real browser (Novada Browser API)
   agentproxy_status   Proxy network health check
 `);
   process.exit(0);
