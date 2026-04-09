@@ -26,6 +26,68 @@ AI agents get blocked on 60–70% of commercial websites. Standard HTTP requests
 
 ---
 
+## Providers
+
+ProxyVeil works with **any HTTP proxy**. Novada is the built-in default with deepest integration — automatic country/city/session targeting. For other providers, use the generic adapter.
+
+### Novada (default — recommended)
+
+Full integration: automatic geo-targeting, city-level targeting, sticky sessions, 195+ countries.
+
+```bash
+claude mcp add proxy-veil \
+  -e NOVADA_PROXY_USER=your_username \
+  -e NOVADA_PROXY_PASS=your_password \
+  -- npx -y proxy-veil
+```
+
+Get credentials: **[novada.com](https://www.novada.com)** → Dashboard → Residential Proxies → Endpoint Generator
+
+### Generic HTTP Proxy — bring your own provider
+
+Set `PROXY_URL` to use **any HTTP proxy** — BrightData, Smartproxy, Oxylabs, IPRoyal, or your own infrastructure. Novada takes priority if both are set.
+
+```bash
+# BrightData
+claude mcp add proxy-veil \
+  -e PROXY_URL="http://username-country-us:password@zproxy.lum-superproxy.io:22225" \
+  -- npx -y proxy-veil
+
+# Smartproxy
+claude mcp add proxy-veil \
+  -e PROXY_URL="http://username-country-US:password@gate.smartproxy.com:10001" \
+  -- npx -y proxy-veil
+
+# Oxylabs
+claude mcp add proxy-veil \
+  -e PROXY_URL="http://username:password@pr.oxylabs.io:7777" \
+  -- npx -y proxy-veil
+
+# IPRoyal
+claude mcp add proxy-veil \
+  -e PROXY_URL="http://username:password@geo.iproyal.com:12321" \
+  -- npx -y proxy-veil
+
+# Any HTTP proxy
+claude mcp add proxy-veil \
+  -e PROXY_URL="http://user:pass@your-proxy-host:port" \
+  -- npx -y proxy-veil
+```
+
+> **Note:** With the generic adapter, encode country/city/session targeting directly in your proxy URL per your provider's format. `country`, `city`, and `session_id` tool parameters are ignored — they require a provider-specific adapter (Novada supports them natively).
+
+| Feature | Novada | Generic HTTP |
+|---------|--------|-------------|
+| Auto country targeting | ✓ | manual (encode in URL) |
+| Auto city targeting | ✓ | manual (encode in URL) |
+| Sticky sessions | ✓ | manual (encode in URL) |
+| Works with BrightData | — | ✓ |
+| Works with Smartproxy | — | ✓ |
+| Works with Oxylabs | — | ✓ |
+| Works with any HTTP proxy | — | ✓ |
+
+---
+
 ## Get Your Credentials
 
 Sign up at **[novada.com](https://www.novada.com)** — 30 seconds, no credit card.

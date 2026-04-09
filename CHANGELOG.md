@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.4.6 (2026-04-09)
+
+### Phase 2 — Generic HTTP Proxy adapter
+
+- **`PROXY_URL` support** — set `PROXY_URL=http://user:pass@host:port` to use any HTTP proxy provider. Instantly compatible with BrightData, Smartproxy, Oxylabs, IPRoyal, and any standard HTTP CONNECT proxy.
+- **Provider priority** — Novada wins if both `NOVADA_PROXY_USER` and `PROXY_URL` are set. Generic adapter is a fallback, not a replacement.
+- **Capability warnings** — if `country`, `city`, or `session_id` params are passed to the generic adapter (which can't encode them automatically), a warning is logged to stderr. The fetch still proceeds — params are simply not injected into the URL.
+- **`agentproxy_status` upgraded** — now shows active provider name, last-verified date, and supported capabilities alongside network health.
+- **README Providers section** — documents Novada + generic adapter with install commands for BrightData, Smartproxy, Oxylabs, IPRoyal.
+
+## v1.4.5 (2026-04-09)
+
+### Phase 1 — Provider adapter architecture
+
+- **`src/adapters/` layer** — `ProxyAdapter` interface, `NovadaAdapter`, registry + `resolveAdapter()`. Adding a new provider = one new file, one registry line.
+- **Auto-detection** — credentials read once at startup; first adapter with valid credentials wins. Novada always first.
+- **Systematic credential redaction** — error messages scrub all sensitive adapter fields, not just hardcoded env var names.
+- **`agentproxy_status`** — now shows active provider with verified date and capabilities.
+- **Missing credentials error** — now lists all registered providers with their credential docs.
+
+---
+
 ## v1.4.3 (2026-04-09)
 
 ### What's new

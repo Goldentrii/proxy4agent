@@ -45,6 +45,17 @@ export async function agentproxyFetch(
     throw new Error("URL must start with http:// or https://");
   }
 
+  // Warn if targeting params are requested but the active adapter doesn't support them
+  const unsupported: string[] = [];
+  if (params.country    && !adapter.capabilities.country) unsupported.push(`country (not supported by ${adapter.displayName})`);
+  if (params.city       && !adapter.capabilities.city)    unsupported.push(`city (not supported by ${adapter.displayName})`);
+  if (params.session_id && !adapter.capabilities.sticky)  unsupported.push(`session_id/sticky (not supported by ${adapter.displayName})`);
+  if (unsupported.length) {
+    // Surface as a non-fatal note in the output rather than an error
+    // so the fetch still proceeds — the params are simply ignored by buildProxyUrl
+    console.error(`[proxy-veil] Warning: ${unsupported.join(", ")}. Switch to Novada for full targeting support.`);
+  }
+
   const proxyUrl = adapter.buildProxyUrl(credentials, params);
   // HttpsProxyAgent for HTTPS targets (CONNECT tunnel + TLS); HttpProxyAgent for plain HTTP
   const httpsAgent = new HttpsProxyAgent(proxyUrl);

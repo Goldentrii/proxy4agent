@@ -128,10 +128,22 @@ class ProxyVeilServer {
                     }
                     case "agentproxy_status": {
                         const networkStatus = await agentproxyStatus();
-                        const provider = proxyContext
-                            ? `Provider: ${proxyContext.adapter.displayName} (verified ${proxyContext.adapter.lastVerified})`
-                            : "Provider: none configured";
-                        result = `${provider}\n\n${networkStatus}`;
+                        const lines = [];
+                        if (proxyContext) {
+                            const { adapter } = proxyContext;
+                            const caps = [
+                                adapter.capabilities.country ? "country targeting" : null,
+                                adapter.capabilities.city ? "city targeting" : null,
+                                adapter.capabilities.sticky ? "sticky sessions" : null,
+                            ].filter(Boolean).join(", ") || "none (use Novada for full targeting)";
+                            lines.push(`Provider:     ${adapter.displayName}`);
+                            lines.push(`Verified:     ${adapter.lastVerified}`);
+                            lines.push(`Capabilities: ${caps}`);
+                        }
+                        else {
+                            lines.push("Provider: none configured");
+                        }
+                        result = `${lines.join("\n")}\n\n${networkStatus}`;
                         break;
                     }
                     default:
