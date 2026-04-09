@@ -183,6 +183,46 @@ describe("GenericHttpAdapter", () => {
   });
 });
 
+// ─── Smartproxy city targeting ─────────────────────────────
+
+describe("SmartproxyAdapter city targeting", () => {
+  it("lowercases city", () => {
+    const creds = { user: "u", pass: "p", host: "h", port: "10001" };
+    const url = SmartproxyAdapter.buildProxyUrl(creds, { city: "NewYork" });
+    expect(url).toContain("-city-newyork");
+  });
+
+  it("encodes country + city + session together", () => {
+    const creds = { user: "u", pass: "p", host: "h", port: "10001" };
+    const url = SmartproxyAdapter.buildProxyUrl(creds, {
+      country: "us",
+      city: "chicago",
+      session_id: "s1",
+    });
+    expect(url).toContain("u-country-US-city-chicago-session-s1");
+  });
+});
+
+// ─── Oxylabs city targeting ───────────────────────────────
+
+describe("OxylabsAdapter city targeting", () => {
+  it("lowercases city", () => {
+    const creds = { user: "u", pass: "p", host: "h", port: "7777" };
+    const url = OxylabsAdapter.buildProxyUrl(creds, { city: "London" });
+    expect(url).toContain("-city-london");
+  });
+
+  it("encodes country + city + session together", () => {
+    const creds = { user: "u", pass: "p", host: "h", port: "7777" };
+    const url = OxylabsAdapter.buildProxyUrl(creds, {
+      country: "gb",
+      city: "london",
+      session_id: "s1",
+    });
+    expect(url).toContain("u-cc-GB-city-london-sessid-s1");
+  });
+});
+
 // ─── Registry / resolveAdapter ────────────────────────────
 
 describe("resolveAdapter", () => {
