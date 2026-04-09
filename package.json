@@ -18,7 +18,9 @@
     "build": "tsc && node --input-type=commonjs -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "dev": "tsc --watch",
     "inspector": "npx @modelcontextprotocol/inspector build/index.js",
-    "prepublishOnly": "npm run build"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
@@ -65,6 +67,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.4"
   }
 }

@@ -6,6 +6,7 @@
 [![npm downloads](https://img.shields.io/npm/dw/proxy-veil?label=downloads&color=blue)](https://npmjs.com/package/proxy-veil)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![CI](https://github.com/Goldentrii/proxy-veil/actions/workflows/ci.yml/badge.svg)](https://github.com/Goldentrii/proxy-veil/actions)
 [![Smithery](https://smithery.ai/badge/proxy-veil)](https://smithery.ai/server/proxy-veil)
 
 Works with **Claude Code**, **Cursor**, **Windsurf**, **Cline**, **Continue**, and any MCP-compatible AI agent. Powered by **[Novada](https://www.novada.com)**.

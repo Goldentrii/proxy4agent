@@ -1,0 +1,209 @@
+import { describe, it, expect } from "vitest";
+import { validateFetchParams } from "../tools/fetch.js";
+import { validateSessionParams } from "../tools/session.js";
+import { validateRenderParams } from "../tools/render.js";
+import { validateSearchParams } from "../tools/search.js";
+
+// ─── Fetch validator ──────────────────────────────────────
+
+describe("validateFetchParams", () => {
+  it("accepts valid params", () => {
+    const p = validateFetchParams({ url: "https://example.com" });
+    expect(p.url).toBe("https://example.com");
+    expect(p.format).toBe("markdown");
+    expect(p.timeout).toBe(60);
+  });
+
+  it("rejects missing url", () => {
+    expect(() => validateFetchParams({})).toThrow("url is required");
+  });
+
+  it("rejects non-http url", () => {
+    expect(() => validateFetchParams({ url: "ftp://bad" })).toThrow("http://");
+  });
+
+  it("rejects country with hyphens (injection prevention)", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", country: "us-session-injected" }))
+      .toThrow();
+  });
+
+  it("rejects country over 10 chars", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", country: "abcdefghijk" }))
+      .toThrow();
+  });
+
+  it("rejects city with hyphens", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", city: "new-york" }))
+      .toThrow();
+  });
+
+  it("rejects city over 50 chars", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", city: "a".repeat(51) }))
+      .toThrow();
+  });
+
+  it("rejects session_id with hyphens", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", session_id: "my-session" }))
+      .toThrow();
+  });
+
+  it("rejects session_id over 64 chars", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", session_id: "a".repeat(65) }))
+      .toThrow();
+  });
+
+  it("accepts valid session_id", () => {
+    const p = validateFetchParams({ url: "https://x.com", session_id: "abc_123" });
+    expect(p.session_id).toBe("abc_123");
+  });
+
+  it("rejects invalid format", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", format: "json" }))
+      .toThrow("format");
+  });
+
+  it("rejects NaN timeout", () => {
+    expect(() => validateFetchParams({ url: "https://x.com", timeout: "abc" }))
+      .toThrow("timeout");
+  });
+
+  it("rejects timeout out of range", () => {
+    // 0 is falsy — defaults to 60, so only test explicit out-of-range values
+    expect(() => validateFetchParams({ url: "https://x.com", timeout: -1 })).toThrow();
+    expect(() => validateFetchParams({ url: "https://x.com", timeout: 121 })).toThrow();
+  });
+
+  it("accepts valid timeout", () => {
+    expect(validateFetchParams({ url: "https://x.com", timeout: 30 }).timeout).toBe(30);
+  });
+});
+
+// ─── Session validator ────────────────────────────────────
+
+describe("validateSessionParams", () => {
+  it("accepts valid params", () => {
+    const p = validateSessionParams({ session_id: "s1", url: "https://x.com" });
+    expect(p.session_id).toBe("s1");
+    expect(p.format).toBe("markdown");
+  });
+
+  it("rejects missing session_id", () => {
+    expect(() => validateSessionParams({ url: "https://x.com" })).toThrow("session_id");
+  });
+
+  it("rejects session_id with hyphens", () => {
+    expect(() => validateSessionParams({ session_id: "a-b", url: "https://x.com" }))
+      .toThrow();
+  });
+
+  it("rejects country with hyphens", () => {
+    expect(() => validateSessionParams({ session_id: "s1", url: "https://x.com", country: "us-bad" }))
+      .toThrow();
+  });
+
+  it("rejects city with hyphens", () => {
+    expect(() => validateSessionParams({ session_id: "s1", url: "https://x.com", city: "new-york" }))
+      .toThrow();
+  });
+
+  it("validates format", () => {
+    expect(() => validateSessionParams({ session_id: "s1", url: "https://x.com", format: "json" }))
+      .toThrow("format");
+  });
+
+  it("rejects NaN timeout", () => {
+    expect(() => validateSessionParams({ session_id: "s1", url: "https://x.com", timeout: "abc" }))
+      .toThrow("timeout");
+  });
+});
+
+// ─── Render validator ─────────────────────────────────────
+
+describe("validateRenderParams", () => {
+  it("accepts valid params", () => {
+    const p = validateRenderParams({ url: "https://x.com" });
+    expect(p.format).toBe("markdown");
+    expect(p.timeout).toBe(60);
+  });
+
+  it("rejects missing url", () => {
+    expect(() => validateRenderParams({})).toThrow("url");
+  });
+
+  it("rejects invalid format", () => {
+    expect(() => validateRenderParams({ url: "https://x.com", format: "json" })).toThrow();
+  });
+
+  it("rejects wait_for over 200 chars", () => {
+    expect(() => validateRenderParams({ url: "https://x.com", wait_for: "a".repeat(201) }))
+      .toThrow("200");
+  });
+
+  it("rejects wait_for with unsafe characters (backtick)", () => {
+    expect(() => validateRenderParams({ url: "https://x.com", wait_for: "div`injected`" }))
+      .toThrow("invalid characters");
+  });
+
+  it("rejects wait_for with semicolons", () => {
+    expect(() => validateRenderParams({ url: "https://x.com", wait_for: "div;alert(1)" }))
+      .toThrow("invalid characters");
+  });
+
+  it("rejects wait_for with curly braces", () => {
+    expect(() => validateRenderParams({ url: "https://x.com", wait_for: "div{color:red}" }))
+      .toThrow("invalid characters");
+  });
+
+  it("accepts valid CSS selectors", () => {
+    const cases = [".class", "#id", "div > span", "[data-test='value']", "h1:first-child", ".a .b .c"];
+    for (const sel of cases) {
+      expect(validateRenderParams({ url: "https://x.com", wait_for: sel }).wait_for).toBe(sel);
+    }
+  });
+
+  it("rejects timeout below 5", () => {
+    expect(() => validateRenderParams({ url: "https://x.com", timeout: 4 })).toThrow();
+  });
+
+  it("rejects NaN timeout", () => {
+    expect(() => validateRenderParams({ url: "https://x.com", timeout: "abc" })).toThrow();
+  });
+});
+
+// ─── Search validator ─────────────────────────────────────
+
+describe("validateSearchParams", () => {
+  it("accepts valid params", () => {
+    const p = validateSearchParams({ query: "test" });
+    expect(p.query).toBe("test");
+    expect(p.num).toBe(10);
+    expect(p.engine).toBe("google");
+  });
+
+  it("rejects missing query", () => {
+    expect(() => validateSearchParams({})).toThrow("query");
+  });
+
+  it("rejects non-google engine", () => {
+    expect(() => validateSearchParams({ query: "test", engine: "bing" })).toThrow("google");
+  });
+
+  it("rejects NaN num", () => {
+    expect(() => validateSearchParams({ query: "test", num: "abc" })).toThrow("num");
+  });
+
+  it("rejects num out of range", () => {
+    // 0 is falsy — defaults to 10, so only test explicit out-of-range values
+    expect(() => validateSearchParams({ query: "test", num: -1 })).toThrow();
+    expect(() => validateSearchParams({ query: "test", num: 21 })).toThrow();
+  });
+
+  it("rejects country with invalid chars", () => {
+    expect(() => validateSearchParams({ query: "test", country: "u s" })).toThrow();
+  });
+
+  it("accepts valid locale codes", () => {
+    expect(validateSearchParams({ query: "test", country: "en-US" }).country).toBe("en-US");
+    expect(validateSearchParams({ query: "test", language: "zh" }).language).toBe("zh");
+  });
+});

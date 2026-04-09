@@ -14,6 +14,14 @@ const proxyContext = resolveAdapter(process.env);
 // ─── Other credentials (not provider-routing) ─────────────────────────────────
 const NOVADA_API_KEY = process.env.NOVADA_API_KEY;
 const NOVADA_BROWSER_WS = process.env.NOVADA_BROWSER_WS;
+// ─── Render concurrency limiter ─────────────────────────────────────────────
+// Prevents runaway Browser API costs from concurrent render calls.
+// Default max 3 — override with PROXY_VEIL_MAX_RENDERS env var.
+const MAX_CONCURRENT_RENDERS = (() => {
+    const raw = Number(process.env.PROXY_VEIL_MAX_RENDERS);
+    return Number.isInteger(raw) && raw > 0 && raw <= 20 ? raw : 3;
+})();
+let activeRenders = 0;
 // ─── Tool Definitions ────────────────────────────────────────────────────────
 const TOOLS = [
     {
@@ -112,7 +120,19 @@ class ProxyVeilServer {
                     case "agentproxy_render": {
                         if (!NOVADA_BROWSER_WS)
                             return this.missingBrowserWsError();
-                        result = await agentproxyRender(validateRenderParams(raw), NOVADA_BROWSER_WS);
+                        if (activeRenders >= MAX_CONCURRENT_RENDERS) {
+                            return {
+                                content: [{ type: "text", text: `Error: Too many concurrent renders (limit: ${MAX_CONCURRENT_RENDERS}). Wait for an active render to finish before starting another. Override with PROXY_VEIL_MAX_RENDERS env var.` }],
+                                isError: true,
+                            };
+                        }
+                        activeRenders++;
+                        try {
+                            result = await agentproxyRender(validateRenderParams(raw), NOVADA_BROWSER_WS);
+                        }
+                        finally {
+                            activeRenders--;
+                        }
                         break;
                     }
                     case "agentproxy_search": {
